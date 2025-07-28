@@ -4,11 +4,11 @@ export const getServerUrl = () => {
     }
 
     if (process.env.VERCEL_ENV === "production") {
-        return "https://prod.https://vercel.com/ashhs-projects-75eb2bc8";
+        return "https://urbanmood-nextjs-drab.vercel.app";
     }
 
     if (process.env.VERCEL_ENV === "preview") {
-        return process.env.VERCEL_URL
+        return `https://${process.env.VERCEL_URL}`
     }
-    return "https://prod.com";
+    return "https://fallback.com";
 }
