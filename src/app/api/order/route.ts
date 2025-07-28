@@ -4,96 +4,92 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const POST = async (request: NextRequest) => {
     const input = await request.json();
-    let NewItem: OrderItem;
-    let ExistingItem: OrderItem | null
-
 
     const order = await prisma.orders.findFirst({
         where: {
             user_id: input.user.id,
-            status: "pending"
-        }
-    })
-
+            status: "pending",
+        },
+    });
 
     if (order) {
-        ExistingItem = await prisma.orderItem.findFirst({
+        const existingItem = await prisma.orderItem.findFirst({
             where: {
                 orderId: order.orderId,
                 productId: input.product.ProductId,
-                size: input.size
-            }
-        })
+                size: input.size,
+            },
+        });
 
-        if (ExistingItem) {
+        if (existingItem) {
             await prisma.orderItem.update({
                 where: {
-                    orderItemId: ExistingItem.orderItemId
+                    orderItemId: existingItem.orderItemId,
                 },
                 data: {
-                    quantity: ExistingItem.quantity + 1
-                }
-            })
-
-            const PriceUpdated = order.total + ExistingItem.price
+                    quantity: existingItem.quantity + 1,
+                },
+            });
 
             await prisma.orders.update({
                 where: {
                     orderId: order.orderId,
                 },
                 data: {
-                    total: PriceUpdated
-                }
-            })
+                    total: order.total + existingItem.price,
+                },
+            });
 
-            return NextResponse.json({ ExistingItem })
-
-        } else {
-            NewItem = await prisma.orderItem.create({
-                data: {
-                    orderId: order?.orderId,
-                    productId: input.product.ProductId,
-                    size: input.size,
-                    quantity: 1,
-                    price: input.product.price
-                }
-            })
+            return NextResponse.json({ ExistingItem: existingItem });
         }
 
-        const PriceUpdated = order.total + NewItem.price
+        const newItem = await prisma.orderItem.create({
+            data: {
+                orderId: order.orderId,
+                productId: input.product.ProductId,
+                size: input.size,
+                quantity: 1,
+                price: input.product.price,
+            },
+        });
 
         await prisma.orders.update({
             where: {
                 orderId: order.orderId,
             },
             data: {
-                total: PriceUpdated
-            }
-        })
+                total: order.total + newItem.price,
+            },
+        });
 
+        return NextResponse.json({ NewItem: newItem });
     }
-    else {
-        const newOrder = await prisma.orders.create({
-            data: {
-                user_id: input.user.id,
-                status: "pending",
-                total: 0
-            }
-        })
 
-        NewItem = await prisma.orderItem.create({
-            data: {
-                orderId: newOrder.orderId,
-                productId: input.product.ProductId,
-                size: input.size,
-                price: input.product.price,
-                quantity: 1
-            }
-        })
+    const newOrder = await prisma.orders.create({
+        data: {
+            user_id: input.user.id,
+            status: "pending",
+            total: 0,
+        },
+    });
 
-    }
-    return NextResponse.json({ NewItem })
-}
+    const newItem = await prisma.orderItem.create({
+        data: {
+            orderId: newOrder.orderId,
+            productId: input.product.ProductId,
+            size: input.size,
+            price: input.product.price,
+            quantity: 1,
+        },
+    });
+    await prisma.orders.update({
+        where: {
+            orderId: newOrder.orderId,
+        },
+        data: {
+            total: newItem.price,
+        },
+    });
 
-
-
+    return NextResponse.json({ NewItem: newItem });
+};
