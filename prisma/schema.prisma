@@ -1,0 +1,156 @@
+
+generator client {
+  provider        = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model gender {
+  genderId Int        @id @default(autoincrement())
+  name     String     @unique
+  products products[]
+}
+
+model category {
+  categoryId Int        @id @default(autoincrement())
+  name       String     @unique
+  products   products[]
+}
+
+model orders {
+  orderId    Int       @id @default(autoincrement())
+  user_id    String?
+  total      Float
+  status     String?   @default("pending")
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+  User       User?    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  updated_at  DateTime?   @default(now()) @db.Timestamp(6)
+  orderItems orderItem[]
+}
+
+model orderItem {
+  orderItemId Int    @id @default(autoincrement())
+  order       orders @relation(fields: [orderId], references: [orderId])
+  orderId     Int
+  price       Float
+  product   products @relation(fields: [productId], references: [ProductId])
+  productId Int
+  size      String?
+  quantity  Int      @default(1)
+}
+
+model favourites {
+  id        Int      @id @default(autoincrement())
+  userId    String?
+  productId Int?
+  createdAt DateTime @default(now())
+
+  user    User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  products products? @relation(fields: [productId], references: [ProductId], onDelete: Cascade)
+
+}
+
+
+model products {
+  ProductId   Int         @id @default(autoincrement())
+  name        String
+  description String
+  price       Float
+  gender_id   Int?
+  category_id Int?
+  url         String
+  created_at  DateTime?   @default(now()) @db.Timestamp(6)
+  updated_at  DateTime?   @default(now()) @db.Timestamp(6)
+  gender      gender?     @relation(fields: [gender_id], references: [genderId], onDelete: NoAction, onUpdate: NoAction)
+  category    category?   @relation(fields: [category_id], references: [categoryId], onDelete: NoAction, onUpdate: NoAction)
+  orderItems  orderItem[]
+  favourites  favourites[]
+}
+
+
+model reviews {
+  reviewId  Int       @id @default(autoincrement())
+  description String
+  star      Int
+  username  String?
+  userId    String?
+  User      User?     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This model has been renamed to 'Renamedtry' during introspection, because the original name 'try' is reserved.
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+
+model Renamedtry {
+  id Int
+
+  @@map("try")
+  @@ignore
+}
+
+
+
+model User {
+  id            String    @id
+  name          String
+  email         String
+  emailVerified Boolean
+  image         String?
+  createdAt     DateTime
+  updatedAt     DateTime
+  sessions      Session[]
+  accounts      Account[]
+  orders        orders[]
+  favourites favourites[]
+  reviews    reviews[]
+
+  @@unique([email])
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime
+  updatedAt DateTime
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime
+  updatedAt             DateTime
+
+  @@map("account")
+}
+
+model Verification {
+  id         String    @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime?
+  updatedAt  DateTime?
+
+  @@map("verification")
+}
