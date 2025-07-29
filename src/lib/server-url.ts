@@ -4,7 +4,7 @@ export const getServerUrl = () => {
     }
 
     if (process.env.VERCEL_ENV === "production") {
-        return "https://urbanmood-nextjs-drab.vercel.app";
+        return "https://urbanmood-nextjs-ncml.vercel.app/";
     }
 
     if (process.env.VERCEL_ENV === "preview") {
